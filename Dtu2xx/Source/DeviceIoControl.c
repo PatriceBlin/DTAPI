@@ -16,6 +16,10 @@
 #include "Dtu2xxRegs.h"
 #include "EzUsb.h"
 
+#ifdef USE_UNLOCKED_IOCTL
+DEFINE_MUTEX(Dtu2xx_ioctlmtx);
+#endif
+
 #ifdef CONFIG_COMPAT
 //.-.-.-.-.-.-.-.-.-.-.-.-.-.-.- Dtu2xxCompatDeviceControl -.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-
 //
@@ -28,11 +32,40 @@ long Dtu2xxCompatDeviceControl(struct file *file, unsigned int cmd, unsigned lon
 #else
 	struct inode *inode = file->f_path.dentry->d_inode;
 #endif
+	
+	long res;
 
+	mutex_lock(&Dtu2xx_ioctlmtx);
 	// Just call the regular IOCTL handler; it should be 32-/64-bit clean
-	return Dtu2xxDeviceControl(inode, file, cmd, (unsigned long)compat_ptr(arg));
+	res = Dtu2xxDeviceControl(inode, file, cmd, (unsigned long)compat_ptr(arg));
+	mutex_unlock(&Dtu2xx_ioctlmtx);
+
+	return res;
 }
 #endif	// #ifdef CONFIG_COMPAT
+
+#ifdef USE_UNLOCKED_IOCTL
+//.-.-.-.-.-.-.-.-.-.-.-.-.-.-.- Dtu2xxDeviceControl_unlocked -.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-
+//
+// Provide local mutex lock for ioctl
+//
+long Dtu2xxDeviceControl_unlocked(struct file *file, unsigned int cmd, unsigned long arg)
+{
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,20)
+	struct inode *inode = file->f_dentry->d_inode;
+#else
+	struct inode *inode = file->f_path.dentry->d_inode;
+#endif
+
+	long res;
+
+	mutex_lock(&Dtu2xx_ioctlmtx);
+	res = Dtu2xxDeviceControl(inode, file, cmd, arg);
+	mutex_unlock(&Dtu2xx_ioctlmtx);
+
+	return res;
+}
+#endif
 
 //-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.- Dtu2xxDeviceControl -.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
 //

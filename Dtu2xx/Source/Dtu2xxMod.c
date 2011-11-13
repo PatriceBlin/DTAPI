@@ -62,7 +62,11 @@ struct file_operations Dtu2xxFops =
     .llseek = no_llseek,
     .read = Dtu2xxRead,
     .write = Dtu2xxWrite,
+#ifdef USE_UNLOCKED_IOCTL
+	.unlocked_ioctl = Dtu2xxDeviceControl_unlocked,
+#else
     .ioctl = Dtu2xxDeviceControl,
+#endif
 #ifdef CONFIG_COMPAT
 	.compat_ioctl =	Dtu2xxCompatDeviceControl,
 #endif

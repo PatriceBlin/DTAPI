@@ -27,6 +27,11 @@
 #include <linux/sched.h>	// wait queue
 #include <linux/time.h>		// CURRENT_TIME macro
 #include <linux/ioctl.h>
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,36)
+	#define USE_UNLOCKED_IOCTL
+#endif
+
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,31)
 	#define NO_BKL
 	#include <linux/mutex.h>
@@ -342,6 +347,11 @@ int  Dtu2xxDeviceControl(struct inode *inode, struct file *filp,unsigned int cmd
 #ifdef CONFIG_COMPAT
 long  Dtu2xxCompatDeviceControl(struct file *filp,unsigned int cmd, unsigned long arg);
 #endif
+
+#ifdef USE_UNLOCKED_IOCTL
+long  Dtu2xxDeviceControl_unlocked(struct file *filp,unsigned int cmd, unsigned long arg);
+#endif
+
 Int  Dtu2xxIoCtlDeviceLedControl(IN PDTU2XX_FDO, IN Int);
 Int  Dtu2xxIoCtlGetDeviceInfo(IN PDTU2XX_FDO, OUT Int*, OUT Int*);
 Int  Dtu2xxIoCtlReadRegister(IN PDTU2XX_FDO, IN Int, OUT UInt32*);
