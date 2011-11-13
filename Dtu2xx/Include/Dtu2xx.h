@@ -28,7 +28,8 @@
 #include <linux/time.h>		// CURRENT_TIME macro
 #include <linux/ioctl.h>
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,31)
-	#include <linux/smp_lock.h>
+	#define NO_BKL
+	#include <linux/mutex.h>
 #else
 	#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,26)
 	#include <linux/semaphore.h>		// semaphore

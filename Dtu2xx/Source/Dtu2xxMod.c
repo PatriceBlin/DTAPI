@@ -16,6 +16,10 @@
 //.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.- Include files -.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-
 #include "Dtu2xx.h"
 
+#ifdef NO_BKL
+DEFINE_MUTEX(Dtu2xx_openmtx);
+#endif
+
 //+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+ USB device ID structure +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
 //
 // This structure makes hotplug associate the driver with the right device ID's.
@@ -167,12 +171,16 @@ int Dtu2xxOpen(
     struct inode* inode,
     struct file *file)
 {
-    Int minor;
+    Int minor, res = 0;
     struct usb_interface *pUsbItf;
     DTU2XX_FDO *pFdo;
 
 #if LOG_LEVEL > 0
 	DTU2XX_LOG( KERN_INFO, "Dtu2xxOpen: ENTER" );
+#endif
+
+#ifdef NO_BKL
+	mutex_lock(&Dtu2xx_openmtx);
 #endif
 
 	// Store minor number
@@ -182,21 +190,28 @@ int Dtu2xxOpen(
     pUsbItf = usb_find_interface(&Dtu2xxDriver, minor);
     if (!pUsbItf) {
 		DTU2XX_LOG( KERN_INFO, "Dtu2xxOpen: usb_find_interface failed" );
-		return -ENODEV;
+		res = -ENODEV;
+		goto done;
 	}
 
 	// Get functional device object
     pFdo = usb_get_intfdata(pUsbItf);
     if (!pFdo) {
 		DTU2XX_LOG( KERN_INFO, "Dtu2xxOpen: usb_get_intfdata failed" );
-		return -ENODEV;
+		res = -ENODEV;
+		goto done;
 	}
 
 	// Increment usage count
     Dtu2xxIncrUsageCount(pFdo);
 	// Store FDO with file-object
     file->private_data = pFdo;
-    return 0;
+
+done:
+#ifdef NO_BKL
+	mutex_unlock(&Dtu2xx_openmtx);
+#endif
+    return res;
 }
 
 //.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.- Dtu2xxRelease -.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-
@@ -495,8 +510,13 @@ void Dtu2xxDisconnect(
 	DTU2XX_LOG( KERN_INFO, "Dtu2xxDisconnect: ENTER" );
 #endif
 
+
+#ifdef NO_BKL
+	mutex_lock(&Dtu2xx_openmtx);
+#else
     // Prevent Dtu2xxOpen from racing Dtu2xxDisconnect by a big kernel lock
     lock_kernel();
+#endif
 
 	// Get our functional-device-object
 	pFdo = usb_get_intfdata(pUsbItf);
@@ -505,8 +525,13 @@ void Dtu2xxDisconnect(
 	// Deregister our device
     usb_deregister_dev(pUsbItf, pFdo->m_pUsbClass);
 
+	
+#ifdef NO_BKL
+	mutex_unlock(&Dtu2xx_openmtx);
+#else
 	// Unlock kerenel
-    unlock_kernel();
+	unlock_kernel();
+#endif
 
     Dtu2xxDecrUsageCount(pFdo);
 }
