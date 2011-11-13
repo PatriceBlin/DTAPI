@@ -15,6 +15,11 @@
 #include "../Include/Dta1xxRegs.h"
 #include <asm/uaccess.h>
 
+#ifdef NO_IOCTL
+#include <linux/mutex.h>
+DEFINE_MUTEX(Dta1xx_ioctlmtx);
+#endif
+
 //=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+ Implementation +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=
 
 #ifdef CONFIG_COMPAT
@@ -34,6 +39,24 @@ long Dta1xxCompatIoCtl(struct file *file, unsigned int cmd, unsigned long arg)
 	return Dta1xxIoCtl(inode, file, cmd, (unsigned long)compat_ptr(arg));
 }
 #endif	// #ifdef CONFIG_COMPAT
+
+#ifdef NO_IOCTL
+long Dta1xxIoCtl_unlocked(struct file *file, unsigned int cmd, unsigned long arg)
+{
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,20)
+	struct inode *inode = file->f_dentry->d_inode;
+#else
+	struct inode *inode = file->f_path.dentry->d_inode;
+#endif
+	long res;
+	
+	mutex_lock(&Dta1xx_ioctlmtx);
+	res = Dta1xxIoCtl(inode, file, cmd, arg);
+	mutex_unlock(&Dta1xx_ioctlmtx);
+	return res;
+}
+#endif
+
 
 //-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.- Dta1xxIoCtl -.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
 //

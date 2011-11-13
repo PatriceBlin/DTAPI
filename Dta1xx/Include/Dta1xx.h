@@ -49,6 +49,10 @@
 	#endif
 #endif // #ifdef CONFIG_COMPAT
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,36)
+#define NO_IOCTL
+#endif
+
 #endif // #ifdef __KERNEL__
 
 #include "DriverTypes.h"
@@ -1059,6 +1063,9 @@ Int  Dta1xxIoCtl(struct inode *inode, struct file *filp, unsigned int cmd,
 				 unsigned long arg);
 #ifdef CONFIG_COMPAT
 long  Dta1xxCompatIoCtl(struct file *filp, unsigned int cmd, unsigned long arg);
+#endif
+#ifdef NO_IOCTL
+long  Dta1xxIoCtl_unlocked(struct file *filp, unsigned int cmd, unsigned long arg);
 #endif
 Int  Dta1xxFirmwareReboot(DTA1XX_FDO* pFdo);
 Int  Dta1xxI2cReqExclAccess(DTA1XX_FDO* pFdo, struct file*, Int Request, Int* pGranted);

@@ -68,7 +68,13 @@ struct file_operations g_Dta1xxFOps =
 {
 	open: 			Dta1xxOpen,
 	release:		Dta1xxRelease,
+
+#ifdef NO_IOCTL
+	unlocked_ioctl: Dta1xxIoCtl_unlocked,
+#else
 	ioctl:			Dta1xxIoCtl,
+#endif
+
 #ifdef CONFIG_COMPAT
 	compat_ioctl:	Dta1xxCompatIoCtl,
 #endif
