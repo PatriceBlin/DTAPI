@@ -193,12 +193,21 @@ Int  Dtu2xxInitChannelsGeneric(IN PDTU2XX_FDO pFdo)
 	// Init I2C mutex
 	sema_init(&pFdo->m_I2cMutex, 1);
 	// Initialise I2C exclusive-access variables
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,19)
+	spin_lock_init(&pFdo->m_I2cExclAccSpinLock);
+#else
 	pFdo->m_I2cExclAccSpinLock = SPIN_LOCK_UNLOCKED;
+#endif
 	pFdo->m_pI2cExclAccFileObj = NULL;
 	pFdo->m_I2cExclAccRecursiveCount = 0;
 
 	// Init uCode upload state vars
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,19)
+	spin_lock_init(&pFdo->m_UCodeUploadStateLock);
+#else
 	pFdo->m_UCodeUploadStateLock = SPIN_LOCK_UNLOCKED;
+#endif
 	pFdo->m_UCodeUploadStateLockFileObj = NULL;
 	pFdo->m_UCodeUploadState = DTU2XX_UCODE_NOT_LOADED;
 
