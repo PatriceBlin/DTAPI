@@ -53,6 +53,10 @@
 #define NO_IOCTL
 #endif
 
+#ifndef init_MUTEX
+#define init_MUTEX(sem)		sema_init(sem, 1)
+#endif
+
 #endif // #ifdef __KERNEL__
 
 #include "DriverTypes.h"
