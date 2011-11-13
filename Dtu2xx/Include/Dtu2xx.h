@@ -30,6 +30,9 @@
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,36)
 	#define USE_UNLOCKED_IOCTL
+	#ifndef init_MUTEX
+		#define init_MUTEX(sem)		sema_init(sem, 1)
+	#endif
 #endif
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,31)
