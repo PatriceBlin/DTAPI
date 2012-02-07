@@ -27,6 +27,7 @@
 #include <linux/sched.h>	// wait queue
 #include <linux/time.h>		// CURRENT_TIME macro
 #include <linux/ioctl.h>
+#include <linux/module.h>
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,36)
 	#define USE_UNLOCKED_IOCTL
